@@ -1,0 +1,18 @@
+[
+  {
+    "label": "Build & Debug tank",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "build": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "cargo build && { printf 'DYLD_LIBRARY_PATH=%s/target/debug/deps:%s\\n' \"$(pwd)\" \"$(rustc --print target-libdir)\"; printf 'CARGO_MANIFEST_DIR=%s\\n' \"$(pwd)\"; } > .zed/debug.env"
+      ]
+    },
+    "program": "$ZED_WORKTREE_ROOT/target/debug/tank",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "envFile": ".zed/debug.env",
+    "sourceLanguages": ["rust"]
+  }
+]
