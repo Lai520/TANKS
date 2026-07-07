@@ -1,6 +1,6 @@
 # TANKE - Bevy 坦克大战
 
-[![CI](https://github.com/Lai520/TANKE/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Lai520/TANKE/actions/workflows/ci.yml)
+[![CI](https://github.com/Lai520/TANKES/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Lai520/TANKES/actions/workflows/ci.yml)
 
 **[在线试玩 → https://lai520.github.io/TANKE/](https://lai520.github.io/TANKE/)**
 
