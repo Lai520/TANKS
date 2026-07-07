@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 
-use crate::{
-    common_component::{
-        BulletproofLayer, EffectAnimation, EnemyTankSpawn, MoveAnimation, PlayerTankSpawn,
-        SpawnAnimation, TankId,
-    },
-    screens::Screen,
+use crate::common_component::{
+    BulletproofLayer, EffectAnimation, EnemyTankSpawn, MoveAnimation, PlayerTankSpawn,
+    SpawnAnimation, TankId,
 };
 
 pub(super) fn plugin(app: &mut App) {

@@ -11,8 +11,8 @@ use crate::{
     collision::add_wall_collision,
     map::{
         Camp, CampBundle, EnemySpawnPosBundle, Grass, GrassBundle, Ice, IceBundle, MapBounds,
-        PlayerBundle, RedBrick, RedBrickBundle, River, RiverBundle, Steel, SteelBundle,
-        Stone, StoneBundle, playable_prop_local_positions,
+        PlayerBundle, RedBrick, RedBrickBundle, River, RiverBundle, Steel, SteelBundle, Stone,
+        StoneBundle, playable_prop_local_positions,
     },
     map::{MapLevel, MapState, ReloadLevel},
     resource_manage::ImgAsset,
@@ -24,25 +24,25 @@ pub(super) fn plguin(app: &mut App) {
         OnEnter(Screen::GamePlay),
         (render_map, set_level, clear_map_bounds),
     )
-        .register_ldtk_int_cell::<GrassBundle>(1)
-        .register_ldtk_int_cell::<IceBundle>(2)
-        .register_ldtk_int_cell::<RiverBundle>(3)
-        .register_ldtk_int_cell::<StoneBundle>(4)
-        .register_ldtk_int_cell_for_layer::<RedBrickBundle>("RedWall", 1)
-        .register_ldtk_int_cell_for_layer::<SteelBundle>("Boundary", 1)
-        .register_ldtk_int_cell_for_layer::<CampBundle>("Camp", 1)
-        .register_ldtk_entity::<PlayerBundle>("Player") // 玩家和敌人实体层
-        .register_ldtk_entity::<EnemySpawnPosBundle>("Enemy")
-        .add_systems(OnEnter(MapState::Complete), add_cell_collision)
-        .add_systems(
-            Update,
-            (
-                init_map_bounds
-                    .run_if(in_state(Screen::GamePlay).and(in_state(MapState::Complete)))
-                    .run_if(not(resource_exists::<MapBounds>)),
-                reload_level.run_if(in_state(Screen::GamePlay)),
-            ),
-        );
+    .register_ldtk_int_cell::<GrassBundle>(1)
+    .register_ldtk_int_cell::<IceBundle>(2)
+    .register_ldtk_int_cell::<RiverBundle>(3)
+    .register_ldtk_int_cell::<StoneBundle>(4)
+    .register_ldtk_int_cell_for_layer::<RedBrickBundle>("RedWall", 1)
+    .register_ldtk_int_cell_for_layer::<SteelBundle>("Boundary", 1)
+    .register_ldtk_int_cell_for_layer::<CampBundle>("Camp", 1)
+    .register_ldtk_entity::<PlayerBundle>("Player") // 玩家和敌人实体层
+    .register_ldtk_entity::<EnemySpawnPosBundle>("Enemy")
+    .add_systems(OnEnter(MapState::Complete), add_cell_collision)
+    .add_systems(
+        Update,
+        (
+            init_map_bounds
+                .run_if(in_state(Screen::GamePlay).and(in_state(MapState::Complete)))
+                .run_if(not(resource_exists::<MapBounds>)),
+            reload_level.run_if(in_state(Screen::GamePlay)),
+        ),
+    );
 }
 
 fn reload_level(
@@ -119,8 +119,6 @@ fn init_map_bounds(
 
     commands.insert_resource(MapBounds {
         origin: level_transform.translation().truncate(),
-        width: level.px_wid as f32,
-        height: level.px_hei as f32,
         playable_local_positions,
     });
 }

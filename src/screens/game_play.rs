@@ -82,10 +82,6 @@ fn player_chance(mut next_state: ResMut<NextState<Screen>>, player_info: Query<&
 #[derive(Component)]
 struct GameOver;
 
-/// 游戏结束组件
-#[derive(Component)]
-struct GameOverBig;
-
 /// 游戏结束
 fn game_over(
     mut commands: Commands,

@@ -36,8 +36,6 @@ const PROP_GRID_SIZE: f32 = 8.;
 #[derive(Resource, Clone, Debug)]
 pub struct MapBounds {
     pub origin: Vec2,
-    pub width: f32,
-    pub height: f32,
     /// 8×8 格子内可放置道具的局部坐标（已排除边界层）
     playable_local_positions: Vec<Vec2>,
 }

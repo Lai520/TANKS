@@ -26,17 +26,8 @@ impl EnemyKillRecords {
         self.types[type_index].count
     }
 
-    pub fn points_for_type(&self, type_index: usize) -> usize {
-        let entry = &self.types[type_index];
-        entry.count as usize * entry.points_per_kill
-    }
-
     pub fn points_per_kill(&self, type_index: usize) -> usize {
         self.types[type_index].points_per_kill
-    }
-
-    pub fn total_kills(&self) -> u32 {
-        self.types.iter().map(|entry| entry.count).sum()
     }
 
     pub fn reset(&mut self) {

@@ -6,7 +6,7 @@ mod controller;
 mod kill_records;
 mod player;
 
-pub use kill_records::{EnemyKillRecords, EnemyTypeKill, ENEMY_TANK_TYPE_COUNT};
+pub use kill_records::{ENEMY_TANK_TYPE_COUNT, EnemyKillRecords};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((player::plugin, controller::plugin))

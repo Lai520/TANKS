@@ -4,16 +4,14 @@ use bevy::prelude::*;
 use crate::{
     audio::sound_effect,
     collision::{BoomMsg, ShouldDespawn},
-    common_component::{MoveAnimation, add_bulletproof, add_waterproofer, player_loop_animation},
+    common_component::{add_bulletproof, add_waterproofer, player_loop_animation},
     config::{NO_INVINCIBLE_TIME_OF_PROTECT, PICK_UP_TIME},
     enemy::{EnemyInfo, EnemyNumberState},
     map::{Camp, RedBrick, Stone},
     player::PlayerInfo,
-    props::{
-        PropStatus, PropType, distinguish_prop_entities, prop_generate::Prop, shovel_effect,
-    },
+    props::{PropStatus, PropType, distinguish_prop_entities, prop_generate::Prop, shovel_effect},
     resource_manage::{AudioAsset, ImgAsset},
-    screens::{game_is_active, Screen},
+    screens::{Screen, game_is_active},
 };
 
 pub(super) fn plugin(app: &mut App) {

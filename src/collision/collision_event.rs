@@ -4,7 +4,7 @@ use bevy_ecs_tilemap::map::TilemapTexture;
 use std::collections::HashSet;
 
 use crate::{
-    audio::{self, sound_effect},
+    audio::sound_effect,
     collision::{BoomMsg, ShouldDespawn, strip_tank_physics},
     common_component::{
         BulletInfo, BulletproofLayer, EffectAnimation, Facing, MoveAnimation, PropsSpawn,
@@ -14,7 +14,7 @@ use crate::{
     map::{Camp, RedBrick, ShovelHiddenRedBrick, Steel, Stone},
     player::{PlayerIdle, PlayerInfo, PlayerSpawnRequest},
     resource_manage::{AudioAsset, ImgAsset},
-    screens::{game_is_active, Screen},
+    screens::{Screen, game_is_active},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -289,7 +289,8 @@ fn bullet_vs_enemy_system(
         };
         if bullet_info.horde == 1 {
             // 玩家命中敌坦克
-            if let Ok((mut enemy_info, mut move_animation, ai)) = enemy_query.get_mut(other_entity) {
+            if let Ok((mut enemy_info, mut move_animation, ai)) = enemy_query.get_mut(other_entity)
+            {
                 if player_has_bulletproof(other_entity, &children, &bulletproof_query) {
                     commands.entity(bullet_entity).insert(ShouldDespawn);
                     continue;

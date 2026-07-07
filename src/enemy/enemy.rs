@@ -6,21 +6,21 @@ use crate::{
     animation::tank_spawn_animation,
     collision::{add_bullet_collision, add_tank_collision},
     common_component::{
-        BulletInfo, EnemyTankSpawn, Facing, MoveAnimation, ROTATION, SpawnAnimation, TankId,
-        enemy_loop_animation, spawn_animation,
+        BulletInfo, EnemyTankSpawn, Facing, ROTATION, SpawnAnimation, TankId, enemy_loop_animation,
+        spawn_animation,
     },
     config::{
         ENEMY_ACTION_INTERVAL_MAX, ENEMY_ACTION_INTERVAL_MIN, ENEMY_FIRE_CHANCE,
         ENEMY_HEAVY_TANK_MOVE_SPEED, ENEMY_LIGHT_TANK_MOVE_SPEED, ENEMY_TANK_FIRE_INTERVAL,
         ENEMY_TANK_GENERATE_INTERVAL, ENEMY_TANK_TURN_INTERVAL, ENEMY_TURN_CHANCE,
-        FAST_TANK_MOVE_SPEED, MAX_ENEMY_TANK_COUNT, MAX_ENEMY_TANK_COUNT_PER_STAGE, TILE_SIZE,
+        FAST_TANK_MOVE_SPEED, MAX_ENEMY_TANK_COUNT_PER_STAGE, TILE_SIZE,
     },
     enemy::{Enemy, EnemyInfo, EnemyNumberState},
     map::{EnemySpawnPos, MapState},
     player::{PlayerInfo, PlayerSpawning},
     props::{PropStatus, PropType},
     resource_manage::ImgAsset,
-    screens::{game_is_active, Screen},
+    screens::{Screen, game_is_active},
 };
 
 /// 敌人 AI 组件
@@ -48,7 +48,11 @@ pub(super) fn plugin(app: &mut App) {
             enemy_move,
         )
             .chain()
-            .run_if(in_state(MapState::Complete).and(in_state(Screen::GamePlay)).and(game_is_active)),
+            .run_if(
+                in_state(MapState::Complete)
+                    .and(in_state(Screen::GamePlay))
+                    .and(game_is_active),
+            ),
     );
 }
 

@@ -1,8 +1,8 @@
 # TANKE - Bevy 坦克大战
 
-[![CI](https://github.com/Lai520/TANKES/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Lai520/TANKES/actions/workflows/ci.yml)
+[![CI](https://github.com/Lai520/TANKS/actions/workflows/ci.yml/badge.svg)](https://github.com/Lai520/TANKS/actions/workflows/ci.yml)
 
-**[在线试玩 → https://lai520.github.io/TANKE/](https://lai520.github.io/TANKE/)**
+**[在线试玩 → https://lai520.github.io/TANKS/](https://lai520.github.io/TANKS/)**
 
 初学 rust 和 bevy，第一次使用 bevy 编写游戏，利用网络资源和小部分AI协助完成，欢迎大家设计关卡。
 
