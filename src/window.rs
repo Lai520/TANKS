@@ -1,8 +1,8 @@
 use bevy::{prelude::*, window::WindowResolution};
-use bevy_inspector_egui::{
-    bevy_egui::EguiPlugin,
-    quick::{ResourceInspectorPlugin, WorldInspectorPlugin},
-};
+// use bevy_inspector_egui::{
+//     bevy_egui::EguiPlugin,
+//     quick::{ResourceInspectorPlugin, WorldInspectorPlugin},
+// };
 
 pub const BASE_WIDTH: u32 = 900;
 pub const BASE_HEIGHT: u32 = 720;
