@@ -6,17 +6,17 @@ use crate::{
     animation::tank_spawn_animation,
     collision::{add_bullet_collision, add_tank_collision},
     common_component::{
-        BulletInfo, EnemyTankSpawn, Facing, ROTATION, SpawnAnimation, TankId, enemy_loop_animation,
-        spawn_animation,
+        BulletInfo, EnemyTankSpawn, Facing, MoveAnimation, ROTATION, SpawnAnimation, TankId,
+        enemy_loop_animation, spawn_animation,
     },
     config::{
         ENEMY_ACTION_INTERVAL_MAX, ENEMY_ACTION_INTERVAL_MIN, ENEMY_FIRE_CHANCE,
         ENEMY_HEAVY_TANK_MOVE_SPEED, ENEMY_LIGHT_TANK_MOVE_SPEED, ENEMY_TANK_FIRE_INTERVAL,
         ENEMY_TANK_GENERATE_INTERVAL, ENEMY_TANK_TURN_INTERVAL, ENEMY_TURN_CHANCE,
-        FAST_TANK_MOVE_SPEED, MAX_ENEMY_TANK_COUNT_PER_STAGE, TILE_SIZE,
+        FAST_TANK_MOVE_SPEED, ICE_MIN_SPEED, MAX_ENEMY_TANK_COUNT_PER_STAGE, TANK_RENDER_Z,
     },
     enemy::{Enemy, EnemyInfo, EnemyNumberState},
-    map::{EnemySpawnPos, MapState},
+    map::{EnemySpawnPos, IceTiles, MapState, apply_ice_movement, world_tile},
     player::{PlayerInfo, PlayerSpawning},
     props::{PropStatus, PropType},
     resource_manage::ImgAsset,
@@ -54,14 +54,6 @@ pub(super) fn plugin(app: &mut App) {
                     .and(game_is_active),
             ),
     );
-}
-
-/// 世界坐标映射到 16×16 格子索引
-fn world_tile(pos: Vec3) -> IVec2 {
-    IVec2::new(
-        (pos.x / TILE_SIZE).floor() as i32,
-        (pos.y / TILE_SIZE).floor() as i32,
-    )
 }
 
 /// 敌人生成消息动画
@@ -159,7 +151,11 @@ fn spawn_enemy(
                     ..default()
                 },
                 Transform {
-                    translation: message.transform.translation,
+                    translation: Vec3::new(
+                        message.transform.translation.x,
+                        message.transform.translation.y,
+                        TANK_RENDER_Z,
+                    ),
                     rotation: Quat::from_rotation_z(ROTATION[1]),
                     ..default()
                 },
@@ -184,6 +180,7 @@ fn spawn_enemy(
 /// 敌人坦克随机转向移动 + 随机开火
 fn enemy_move(
     time: Res<Time>,
+    ice_tiles: Option<Res<IceTiles>>,
     mut commands: Commands,
     mut enemy_query: Query<(
         Entity,
@@ -192,13 +189,22 @@ fn enemy_move(
         &mut Facing,
         &mut Transform,
         &mut LinearVelocity,
+        &mut MoveAnimation,
         Option<&Children>,
     )>,
     img_asset: Res<ImgAsset>,
     mut prop_query: Query<&mut PropStatus>,
 ) {
-    'enemy: for (entity, mut ai, enemy_info, mut facing, mut transform, mut velocity, children) in
-        enemy_query.iter_mut()
+    'enemy: for (
+        entity,
+        mut ai,
+        enemy_info,
+        mut facing,
+        mut transform,
+        mut velocity,
+        mut animation,
+        children,
+    ) in enemy_query.iter_mut()
     {
         if let Some(children) = children {
             for child in children.iter() {
@@ -233,7 +239,7 @@ fn enemy_move(
             ai.turn_timer = random_action_timer(ENEMY_TANK_TURN_INTERVAL);
         }
 
-        // 每帧持续施加速度（对抗 LinearDamping）
+        // 每帧持续施加速度
         {
             let speed = match ai.tank_type {
                 3 => ENEMY_HEAVY_TANK_MOVE_SPEED,
@@ -247,7 +253,16 @@ fn enemy_move(
                 Facing::Left => Vec2::new(-1.0, 0.0),
                 Facing::Right => Vec2::new(1.0, 0.0),
             };
-            velocity.0 = direction * speed;
+            let target_velocity = direction * speed;
+            let on_ice = ice_tiles
+                .as_ref()
+                .is_some_and(|tiles| tiles.contains(transform.translation));
+            velocity.0 = if on_ice {
+                apply_ice_movement(velocity.0, target_velocity, time.delta_secs())
+            } else {
+                target_velocity
+            };
+            animation.playing = velocity.0.length_squared() > ICE_MIN_SPEED * ICE_MIN_SPEED;
         }
 
         // 冷却结束后按概率随机开火

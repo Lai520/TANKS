@@ -10,9 +10,9 @@ use bevy_ecs_ldtk::{
 use crate::{
     collision::add_wall_collision,
     map::{
-        Camp, CampBundle, EnemySpawnPosBundle, Grass, GrassBundle, Ice, IceBundle, MapBounds,
+        Camp, CampBundle, EnemySpawnPosBundle, GrassBundle, Ice, IceBundle, IceTiles, MapBounds,
         PlayerBundle, RedBrick, RedBrickBundle, River, RiverBundle, Steel, SteelBundle, Stone,
-        StoneBundle, playable_prop_local_positions,
+        StoneBundle, playable_prop_local_positions, world_tile,
     },
     map::{MapLevel, MapState, ReloadLevel},
     resource_manage::ImgAsset,
@@ -24,16 +24,19 @@ pub(super) fn plguin(app: &mut App) {
         OnEnter(Screen::GamePlay),
         (render_map, set_level, clear_map_bounds),
     )
-    .register_ldtk_int_cell::<GrassBundle>(1)
     .register_ldtk_int_cell::<IceBundle>(2)
     .register_ldtk_int_cell::<RiverBundle>(3)
     .register_ldtk_int_cell::<StoneBundle>(4)
+    .register_ldtk_int_cell_for_layer::<GrassBundle>("Grass", 1)
     .register_ldtk_int_cell_for_layer::<RedBrickBundle>("RedWall", 1)
     .register_ldtk_int_cell_for_layer::<SteelBundle>("Boundary", 1)
     .register_ldtk_int_cell_for_layer::<CampBundle>("Camp", 1)
     .register_ldtk_entity::<PlayerBundle>("Player") // 玩家和敌人实体层
     .register_ldtk_entity::<EnemySpawnPosBundle>("Enemy")
-    .add_systems(OnEnter(MapState::Complete), add_cell_collision)
+    .add_systems(
+        OnEnter(MapState::Complete),
+        (add_cell_collision, build_ice_tiles),
+    )
     .add_systems(
         Update,
         (
@@ -89,6 +92,7 @@ fn set_level(mut commands: Commands, map_level: Res<MapLevel>) {
 
 fn clear_map_bounds(mut commands: Commands) {
     commands.remove_resource::<MapBounds>();
+    commands.remove_resource::<IceTiles>();
 }
 
 /// 从 LDtk 读取当前关卡的尺寸与位置
@@ -121,6 +125,12 @@ fn init_map_bounds(
         origin: level_transform.translation().truncate(),
         playable_local_positions,
     });
+}
+
+/// 收集当前关卡冰面格子
+fn build_ice_tiles(mut commands: Commands, ice: Query<&Transform, With<Ice>>) {
+    let tiles = ice.iter().map(|t| world_tile(t.translation)).collect();
+    commands.insert_resource(IceTiles { tiles });
 }
 
 /// 添加墙体碰撞信息

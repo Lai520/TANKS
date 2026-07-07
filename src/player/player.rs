@@ -6,7 +6,7 @@ use crate::{
     common_component::{
         Facing, PlayerTankSpawn, add_bulletproof, player_loop_animation, spawn_animation,
     },
-    config::{NO_INVINCIBLE_TIME, PLAYER_CHANCE},
+    config::{NO_INVINCIBLE_TIME, PLAYER_CHANCE, TANK_RENDER_Z},
     input_manager::PlayerAction,
     map::{MapState, PlayerSpawnPos},
     player::{EnemyKillRecords, PlayerInfo, PlayerSpawnRequest, PlayerSpawning},
@@ -130,11 +130,13 @@ fn spawn_player(
                         NO_INVINCIBLE_TIME,
                     ))
                     .id();
+                let mut tank_transform = message.transform;
+                tank_transform.translation.z = TANK_RENDER_Z;
                 commands
                     .entity(entity)
                     .try_insert(input_controller)
                     .try_insert(add_tank_collision("player"))
-                    .insert(message.transform)
+                    .insert(tank_transform)
                     .insert((
                         Sprite {
                             image: first_frame,

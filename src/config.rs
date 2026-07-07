@@ -7,8 +7,20 @@ pub const MAX_ENEMY_TANK_COUNT_PER_STAGE: usize = 6;
 /// 地图格子边长
 pub const TILE_SIZE: f32 = 16.0;
 
+/// 坦克渲染层级（需高于冰面/河流等地图层）
+pub const TANK_RENDER_Z: f32 = 4.0;
+
 /// 玩家移动速度
 pub const PLAYER_MOVE_SPEED: f32 = 50.0;
+
+/// 冰面加速（每秒向目标速度靠近的量）
+pub const ICE_ACCELERATION: f32 = 80.0;
+
+/// 冰面摩擦减速（每秒无输入时速度衰减的量）
+pub const ICE_FRICTION: f32 = 35.0;
+
+/// 冰面最小有效速度，低于此值视为停止
+pub const ICE_MIN_SPEED: f32 = 0.5;
 
 /// 敌对轻型坦克移动速度
 pub const ENEMY_LIGHT_TANK_MOVE_SPEED: f32 = 40.;
@@ -38,7 +50,7 @@ pub const ENEMY_TURN_CHANCE: f64 = 0.65;
 pub const ENEMY_FIRE_CHANCE: f64 = 0.55;
 
 /// 出生时无敌时间
-pub const NO_INVINCIBLE_TIME: f32 = 10.0;
+pub const NO_INVINCIBLE_TIME: f32 = 6.0;
 
 /// 防护罩无敌时间
 pub const NO_INVINCIBLE_TIME_OF_PROTECT: f32 = 15.0;

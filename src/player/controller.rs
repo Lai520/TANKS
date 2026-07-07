@@ -5,9 +5,10 @@ use leafwing_input_manager::action_state::ActionState;
 use crate::{
     audio::{music, sound_effect},
     collision::add_bullet_collision,
-    common_component::{BulletInfo, Facing, MoveAnimation, ROTATION},
+    common_component::{BulletInfo, Facing, MoveAnimation, ROTATION, facing_from_velocity},
     config::*,
     input_manager::PlayerAction,
+    map::{IceTiles, apply_ice_movement},
     player::{PlayerIdle, PlayerInfo},
     resource_manage::{AudioAsset, ImgAsset},
     screens::{game_is_active, Screen},
@@ -23,6 +24,8 @@ pub(super) fn plugin(app: &mut App) {
 /// 玩家控制
 fn move_player(
     mut commands: Commands,
+    time: Res<Time>,
+    ice_tiles: Option<Res<IceTiles>>,
     mut player_query: Query<(
         &mut LinearVelocity,
         &mut Facing,
@@ -68,18 +71,40 @@ fn move_player(
             direction.x += 1.;
             *facing = Facing::Right
         }
-        // 旋转朝向角度
+
+        let on_ice = ice_tiles
+            .as_ref()
+            .is_some_and(|tiles| tiles.contains(transform.translation));
+        let target_velocity = if direction != Vec2::ZERO {
+            direction * PLAYER_MOVE_SPEED
+        } else {
+            Vec2::ZERO
+        };
+
+        velocity.0 = if on_ice {
+            apply_ice_movement(velocity.0, target_velocity, time.delta_secs())
+        } else {
+            target_velocity
+        };
+
+        let is_moving = velocity.0.length_squared() > ICE_MIN_SPEED * ICE_MIN_SPEED;
         if direction != Vec2::ZERO {
             animation.playing = true;
             transform.rotation = Quat::from_rotation_z(ROTATION[*facing as usize]);
-            velocity.0 = direction * PLAYER_MOVE_SPEED;
+            if player_info.move_sound.is_none() {
+                let sound = commands.spawn(music(audio_asset.player_move.clone())).id();
+                player_info.move_sound = Some(sound);
+            }
+        } else if is_moving {
+            animation.playing = true;
+            *facing = facing_from_velocity(velocity.0);
+            transform.rotation = Quat::from_rotation_z(ROTATION[*facing as usize]);
             if player_info.move_sound.is_none() {
                 let sound = commands.spawn(music(audio_asset.player_move.clone())).id();
                 player_info.move_sound = Some(sound);
             }
         } else {
             animation.playing = false;
-            velocity.0 = Vec2::ZERO;
             if let Some(sound) = player_info.move_sound {
                 commands.entity(sound).despawn();
                 player_info.move_sound = None;

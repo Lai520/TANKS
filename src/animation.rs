@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 fn move_animation(time: Res<Time>, mut animation_query: Query<(&mut MoveAnimation, &mut Sprite)>) {
     for (mut animation, mut sprite) in &mut animation_query {
         if !animation.playing {
-            return;
+            continue;
         }
 
         animation.timer.tick(time.delta());

@@ -1,7 +1,12 @@
 use avian2d::{math::AdjustPrecision, prelude::*};
 use bevy::{ecs::system::SystemParam, prelude::*};
 
-use crate::{common_component::BulletInfo, screens::{game_is_active, Screen}};
+use crate::{
+    common_component::{BulletInfo, Waterproofer},
+    player::PlayerInfo,
+    props::{PropStatus, PropType},
+    screens::{game_is_active, Screen},
+};
 
 mod collision_event;
 
@@ -48,32 +53,60 @@ pub enum GameLayer {
 pub mod collision_groups {
     use super::*;
 
-    /// 玩家：与玩家、敌人、子弹、墙体、道具碰撞
-    pub fn player() -> CollisionLayers {
-        CollisionLayers::new(
-            GameLayer::Player,
-            [
+    /// 玩家碰撞层；`block_river` 为 true 时河流会阻挡移动
+    pub fn player(block_river: bool) -> CollisionLayers {
+        if block_river {
+            CollisionLayers::new(
                 GameLayer::Player,
-                GameLayer::Enemy,
-                GameLayer::Bullet,
-                GameLayer::Wall,
-                GameLayer::Prop,
-            ],
-        )
+                [
+                    GameLayer::Player,
+                    GameLayer::Enemy,
+                    GameLayer::Bullet,
+                    GameLayer::Wall,
+                    GameLayer::Prop,
+                    GameLayer::River,
+                ],
+            )
+        } else {
+            CollisionLayers::new(
+                GameLayer::Player,
+                [
+                    GameLayer::Player,
+                    GameLayer::Enemy,
+                    GameLayer::Bullet,
+                    GameLayer::Wall,
+                    GameLayer::Prop,
+                ],
+            )
+        }
     }
 
-    /// 敌人：与敌人、玩家、子弹、墙体、道具碰撞
-    pub fn enemy() -> CollisionLayers {
-        CollisionLayers::new(
-            GameLayer::Enemy,
-            [
+    /// 敌人碰撞层；`block_river` 为 true 时河流会阻挡移动
+    pub fn enemy(block_river: bool) -> CollisionLayers {
+        if block_river {
+            CollisionLayers::new(
                 GameLayer::Enemy,
-                GameLayer::Player,
-                GameLayer::Bullet,
-                GameLayer::Wall,
-                GameLayer::Prop,
-            ],
-        )
+                [
+                    GameLayer::Enemy,
+                    GameLayer::Player,
+                    GameLayer::Bullet,
+                    GameLayer::Wall,
+                    GameLayer::Prop,
+                    GameLayer::River,
+                ],
+            )
+        } else {
+            CollisionLayers::new(
+                GameLayer::Enemy,
+                [
+                    GameLayer::Enemy,
+                    GameLayer::Player,
+                    GameLayer::Bullet,
+                    GameLayer::Wall,
+                    GameLayer::Prop,
+                ],
+            )
+        }
     }
 
     /// 边界/石头/墙体/堡垒：与玩家、敌人、子弹碰撞
@@ -141,11 +174,49 @@ pub fn add_wall_collision(width: f32, height: f32, collision_type: &str) -> impl
 #[derive(Component)]
 struct TankPhysics;
 
+/// 坦克是否携带防水层（拾取 PropType::Waterproof 后生效）
+pub fn tank_has_waterproof(
+    tank: Entity,
+    children: &Query<&Children>,
+    waterproofer_query: &Query<(), With<Waterproofer>>,
+    prop_status_query: &Query<&PropStatus>,
+) -> bool {
+    children.get(tank).is_ok_and(|children| {
+        children.iter().any(|child| {
+            waterproofer_query.get(child).is_ok()
+                || prop_status_query
+                    .get(child)
+                    .is_ok_and(|status| status.prop_type == PropType::Waterproof)
+        })
+    })
+}
+
+/// 根据是否携带防水层计算坦克碰撞层
+fn tank_collision_layers(
+    entity: Entity,
+    is_player: bool,
+    children: &Query<&Children>,
+    waterproofer_query: &Query<(), With<Waterproofer>>,
+    prop_status_query: &Query<&PropStatus>,
+) -> CollisionLayers {
+    let block_river = !tank_has_waterproof(
+        entity,
+        children,
+        waterproofer_query,
+        prop_status_query,
+    );
+    if is_player {
+        collision_groups::player(block_river)
+    } else {
+        collision_groups::enemy(block_river)
+    }
+}
+
 /// 添加坦克碰撞相关组件
 pub fn add_tank_collision(collision_type: &str) -> impl Bundle {
     let collision_groups = match collision_type {
-        "player" => collision_groups::player(),
-        _ => collision_groups::enemy(),
+        "player" => collision_groups::player(true),
+        _ => collision_groups::enemy(true),
     };
     (
         TankPhysics,
@@ -187,11 +258,34 @@ fn tank_axis_slide(intended: Vec2, displacement: Vec2) -> bool {
 
 /// 坦克 move-and-slide 移动：阻挡墙体与其他坦克，但不产生物理推挤
 fn tank_move_and_slide(
-    mut query: Query<(Entity, &mut Transform, &mut LinearVelocity, &Collider), With<TankPhysics>>,
+    mut commands: Commands,
+    mut query: Query<
+        (Entity, &mut Transform, &mut LinearVelocity, &Collider, &CollisionLayers),
+        With<TankPhysics>,
+    >,
+    player_tanks: Query<(), With<PlayerInfo>>,
+    children: Query<&Children>,
+    waterproofer_query: Query<(), With<Waterproofer>>,
+    prop_status_query: Query<&PropStatus>,
     move_and_slide: MoveAndSlide,
     time: Res<Time>,
 ) {
-    for (entity, mut transform, mut velocity, collider) in &mut query {
+    for (entity, mut transform, mut velocity, collider, layers) in &mut query {
+        let is_player = player_tanks.get(entity).is_ok();
+        let effective_layers = tank_collision_layers(
+            entity,
+            is_player,
+            &children,
+            &waterproofer_query,
+            &prop_status_query,
+        );
+        if *layers != effective_layers {
+            commands.entity(entity).insert(effective_layers);
+        }
+
+        let filter = SpatialQueryFilter::from_excluded_entities([entity])
+            .with_mask(effective_layers.filters);
+
         let intended_velocity = velocity.0;
         let previous_position = transform.translation.xy();
 
@@ -205,7 +299,7 @@ fn tank_move_and_slide(
             intended_velocity.adjust_precision(),
             time.delta(),
             &MoveAndSlideConfig::default(),
-            &SpatialQueryFilter::from_excluded_entities([entity]),
+            &filter,
             |_| MoveAndSlideHitResponse::Accept,
         );
 

@@ -1,8 +1,12 @@
+use std::collections::HashSet;
+
 use bevy::prelude::*;
 pub mod render_map;
 use bevy_ecs_ldtk::{
     EntityInstance, LdtkEntity, LdtkIntCell, ldtk::FieldValue, ldtk::LayerInstance,
 };
+
+use crate::config::{ICE_ACCELERATION, ICE_FRICTION, ICE_MIN_SPEED, TILE_SIZE};
 
 /// 请求重新加载当前 LDtk 关卡（用于进入下一关）
 #[derive(Message)]
@@ -10,7 +14,7 @@ pub struct ReloadLevel;
 
 pub(super) fn plguin(app: &mut App) {
     app.init_state::<MapState>()
-        .insert_resource(MapLevel { value: 0 })
+        .insert_resource(MapLevel { value: 2 })
         .add_message::<ReloadLevel>()
         .add_plugins(render_map::plguin);
 }
@@ -31,6 +35,71 @@ pub struct MapLevel {
 
 /// 道具位置计算使用的网格边长
 const PROP_GRID_SIZE: f32 = 8.;
+
+/// 世界坐标映射到 16×16 格子索引
+pub fn world_tile(pos: Vec3) -> IVec2 {
+    IVec2::new(
+        (pos.x / TILE_SIZE).floor() as i32,
+        (pos.y / TILE_SIZE).floor() as i32,
+    )
+}
+
+/// 当前关卡冰面格子集合（地图加载后构建）
+#[derive(Resource, Default)]
+pub struct IceTiles {
+    tiles: HashSet<IVec2>,
+}
+
+impl IceTiles {
+    pub fn contains(&self, pos: Vec3) -> bool {
+        self.tiles.contains(&world_tile(pos))
+    }
+}
+
+/// 冰面惯性移动：各轴独立加速/减速，且不允许对角滑动
+pub fn apply_ice_movement(current: Vec2, target: Vec2, dt: f32) -> Vec2 {
+    let accel = ICE_ACCELERATION * dt;
+    let friction = ICE_FRICTION * dt;
+
+    let mut vx = if target.x.abs() > f32::EPSILON {
+        move_toward_scalar(current.x, target.x, accel)
+    } else {
+        move_toward_scalar(current.x, 0., friction)
+    };
+
+    let mut vy = if target.y.abs() > f32::EPSILON {
+        move_toward_scalar(current.y, target.y, accel)
+    } else {
+        move_toward_scalar(current.y, 0., friction)
+    };
+
+    if vx.abs() > f32::EPSILON && vy.abs() > f32::EPSILON {
+        if vx.abs() >= vy.abs() {
+            vy = 0.;
+        } else {
+            vx = 0.;
+        }
+    }
+
+    if vx.abs() < ICE_MIN_SPEED {
+        vx = 0.;
+    }
+    if vy.abs() < ICE_MIN_SPEED {
+        vy = 0.;
+    }
+
+    Vec2::new(vx, vy)
+}
+
+fn move_toward_scalar(current: f32, target: f32, max_delta: f32) -> f32 {
+    if (target - current).abs() <= max_delta {
+        target
+    } else if target > current {
+        current + max_delta
+    } else {
+        current - max_delta
+    }
+}
 
 /// 当前关卡的尺寸与位置（来自 LDtk）
 #[derive(Resource, Clone, Debug)]

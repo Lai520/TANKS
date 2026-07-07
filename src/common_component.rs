@@ -1,7 +1,7 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::{collision::collision_groups, resource_manage::ImgAsset};
+use crate::{collision::collision_groups, config::TANK_RENDER_Z, resource_manage::ImgAsset};
 
 /// 朝向
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
@@ -19,6 +19,21 @@ pub const ROTATION: [f32; 4] = [
     std::f32::consts::FRAC_PI_2,
     -std::f32::consts::FRAC_PI_2,
 ];
+
+/// 根据速度方向推断坦克朝向
+pub fn facing_from_velocity(v: Vec2) -> Facing {
+    if v.x.abs() > v.y.abs() {
+        if v.x > 0. {
+            Facing::Right
+        } else {
+            Facing::Left
+        }
+    } else if v.y > 0. {
+        Facing::Up
+    } else {
+        Facing::Down
+    }
+}
 
 /// 动画组件
 #[derive(Component)]
@@ -95,6 +110,8 @@ pub fn spawn_animation(
     transform: Transform,
     id: u8,
 ) -> impl Bundle {
+    let mut transform = transform;
+    transform.translation.z = TANK_RENDER_Z;
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(15), 4, 1, None, None);
     let atlas_layout = atlas_layouts.add(layout);
     (
@@ -105,7 +122,7 @@ pub fn spawn_animation(
         Friction::new(0.),
         Restitution::ZERO,
         CollisionEventsEnabled,
-        collision_groups::enemy(),
+        collision_groups::enemy(true),
         Sprite::from_atlas_image(
             img_asset.spawn.clone(),
             TextureAtlas {

@@ -26,12 +26,12 @@ pub enum PropType {
     Star,        // 星星升级
     Bulletproof, // 防弹
     Gun,         // 手枪
-    Waterproof,
+    Waterproof,  // 防水层
 }
 
 impl PropType {
     pub(super) fn random() -> Self {
-        let prop_type = rand::random_range(0..7);
+        let prop_type = rand::random_range(0..8);
         match prop_type {
             0 => PropType::Chance,
             1 => PropType::Idle,
