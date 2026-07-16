@@ -35,7 +35,7 @@ pub const ENEMY_HEAVY_TANK_MOVE_SPEED: f32 = ENEMY_LIGHT_TANK_MOVE_SPEED * 1.1;
 pub const ENEMY_TANK_GENERATE_INTERVAL: f32 = 3.0;
 
 /// 敌对坦克转向间隔---秒
-pub const ENEMY_TANK_TURN_INTERVAL: f32 = 0.5;
+pub const ENEMY_TANK_TURN_INTERVAL: f32 = 1.5;
 
 /// 敌对坦克开火间隔---秒
 pub const ENEMY_TANK_FIRE_INTERVAL: f32 = 1.0;

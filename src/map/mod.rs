@@ -14,7 +14,7 @@ pub struct ReloadLevel;
 
 pub(super) fn plguin(app: &mut App) {
     app.init_state::<MapState>()
-        .insert_resource(MapLevel { value: 2 })
+        .insert_resource(MapLevel { value: 0 })
         .add_message::<ReloadLevel>()
         .add_plugins(render_map::plguin);
 }

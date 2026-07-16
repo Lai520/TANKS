@@ -132,6 +132,7 @@ fn spawn_enemy(
 
         let move_animation = enemy_loop_animation(tank_type, is_carrying_prop, &img_asset);
         let first_frame = move_animation.frames[0].clone();
+        let spawn_rotation = Quat::from_rotation_z(ROTATION[Facing::Down as usize]);
 
         entity_commands
             .remove::<(
@@ -156,9 +157,10 @@ fn spawn_enemy(
                         message.transform.translation.y,
                         TANK_RENDER_Z,
                     ),
-                    rotation: Quat::from_rotation_z(ROTATION[1]),
+                    rotation: spawn_rotation,
                     ..default()
                 },
+                Rotation::from(spawn_rotation),
                 Facing::Down,
                 EnemyInfo {
                     level: 0,
@@ -190,6 +192,7 @@ fn enemy_move(
         &mut Transform,
         &mut LinearVelocity,
         &mut MoveAnimation,
+        Option<&mut Rotation>,
         Option<&Children>,
     )>,
     img_asset: Res<ImgAsset>,
@@ -203,6 +206,7 @@ fn enemy_move(
         mut transform,
         mut velocity,
         mut animation,
+        physics_rotation,
         children,
     ) in enemy_query.iter_mut()
     {
@@ -234,12 +238,11 @@ fn enemy_move(
                     2 => Facing::Left,
                     _ => Facing::Right,
                 };
-                transform.rotation = Quat::from_rotation_z(ROTATION[*facing as usize]);
             }
             ai.turn_timer = random_action_timer(ENEMY_TANK_TURN_INTERVAL);
         }
 
-        // 每帧持续施加速度
+        // 每帧持续施加速度；冰面保留惯性，精灵朝向跟随意图 Facing
         {
             let speed = match ai.tank_type {
                 3 => ENEMY_HEAVY_TANK_MOVE_SPEED,
@@ -262,7 +265,15 @@ fn enemy_move(
             } else {
                 target_velocity
             };
-            animation.playing = velocity.0.length_squared() > ICE_MIN_SPEED * ICE_MIN_SPEED;
+            animation.playing =
+                velocity.0.length_squared() > ICE_MIN_SPEED * ICE_MIN_SPEED;
+
+            // 精灵立即跟随意图朝向；冰面上速度可滞后，形成惯性打滑
+            let quat = Quat::from_rotation_z(ROTATION[*facing as usize]);
+            transform.rotation = quat;
+            if let Some(mut physics_rotation) = physics_rotation {
+                *physics_rotation = Rotation::from(quat);
+            }
         }
 
         // 冷却结束后按概率随机开火
